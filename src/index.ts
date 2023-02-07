@@ -28,11 +28,13 @@ async function airdropSolIfNeeded(signer: web3.Keypair, connection: web3.Connect
 }
 
 const ProofInstructionLayout = borsh.struct([
+    borsh.u8('variant'),
     borsh.str('description')
 ])
 
 async function sendTestProofReview(signer: web3.Keypair, programId: web3.PublicKey, connection: web3.Connection) {
     let buffer = Buffer.alloc(1000)
+    const proofTitle = `Zilchy${Math.random()*1000000}`
     ProofInstructionLayout.encode(
         {
             variant: 0,
@@ -44,7 +46,7 @@ async function sendTestProofReview(signer: web3.Keypair, programId: web3.PublicK
     buffer = buffer.slice(0, ProofInstructionLayout.getSpan(buffer))
 
     const [pda] = await web3.PublicKey.findProgramAddress(
-        [signer.publicKey.toBuffer(), Buffer.from("ProofTitle")],
+        [signer.publicKey.toBuffer(), Buffer.from(proofTitle)],
         programId
     )
 
@@ -85,7 +87,7 @@ async function main() {
     const connection = new web3.Connection(web3.clusterApiUrl('devnet'))
     await airdropSolIfNeeded(signer, connection)
 
-    const ProofProgramId = new web3.PublicKey('CCokvSh2JzjW3anmQt14oGc4bJ6jcuwCXFt9LzQoxzch')
+    const ProofProgramId = new web3.PublicKey('55a1yTaEKbtbCXDGemf4VByQ89j9wd2HwSzB3ZDtZ8d8')
     await sendTestProofReview(signer, ProofProgramId, connection)
 }
 
