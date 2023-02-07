@@ -11,7 +11,7 @@ function initializeSignerKeypair(): web3.Keypair {
         fs.writeFileSync('.env',`PRIVATE_KEY=[${signer.secretKey.toString()}]`)
         return signer
     }
-    
+
     const secret = JSON.parse(process.env.PRIVATE_KEY ?? "") as number[]
     const secretKey = Uint8Array.from(secret)
     const keypairFromSecretKey = web3.Keypair.fromSecretKey(secretKey)
@@ -23,41 +23,35 @@ async function airdropSolIfNeeded(signer: web3.Keypair, connection: web3.Connect
     console.log('Current balance is', balance)
     if (balance < web3.LAMPORTS_PER_SOL) {
         console.log('Airdropping 1 SOL...')
-        await connection.requestAirdrop(signer.publicKey, web3.LAMPORTS_PER_SOL)
+        await connection.requestAirdrop(signer.publicKey, 2*web3.LAMPORTS_PER_SOL)
     }
 }
 
-const movieInstructionLayout = borsh.struct([
-    borsh.u8('variant'),
-    borsh.str('title'),
-    borsh.u8('rating'),
+const ProofInstructionLayout = borsh.struct([
     borsh.str('description')
 ])
 
-async function sendTestMovieReview(signer: web3.Keypair, programId: web3.PublicKey, connection: web3.Connection) {
+async function sendTestProofReview(signer: web3.Keypair, programId: web3.PublicKey, connection: web3.Connection) {
     let buffer = Buffer.alloc(1000)
-    const movieTitle = `Braveheart${Math.random()*1000000}`
-    movieInstructionLayout.encode(
+    ProofInstructionLayout.encode(
         {
             variant: 0,
-            title: movieTitle,
-            rating: 5,
-            description: 'A great movie'
+            description: 'A great Proof'
         },
         buffer
     )
 
-    buffer = buffer.slice(0, movieInstructionLayout.getSpan(buffer))
+    buffer = buffer.slice(0, ProofInstructionLayout.getSpan(buffer))
 
     const [pda] = await web3.PublicKey.findProgramAddress(
-        [signer.publicKey.toBuffer(), Buffer.from(movieTitle)],
+        [signer.publicKey.toBuffer(), Buffer.from("ProofTitle")],
         programId
     )
 
     console.log("PDA is:", pda.toBase58())
 
     const transaction = new web3.Transaction()
-    
+
     const instruction = new web3.TransactionInstruction({
         programId: programId,
         data: buffer,
@@ -87,12 +81,12 @@ async function sendTestMovieReview(signer: web3.Keypair, programId: web3.PublicK
 
 async function main() {
     const signer = initializeSignerKeypair()
-    
+
     const connection = new web3.Connection(web3.clusterApiUrl('devnet'))
     await airdropSolIfNeeded(signer, connection)
-    
-    const movieProgramId = new web3.PublicKey('FnHUUiX2jLSaGdt6GpgoJYKnUxzbPG5VmRPEDr1NEekm')
-    await sendTestMovieReview(signer, movieProgramId, connection)
+
+    const ProofProgramId = new web3.PublicKey('CCokvSh2JzjW3anmQt14oGc4bJ6jcuwCXFt9LzQoxzch')
+    await sendTestProofReview(signer, ProofProgramId, connection)
 }
 
 main().then(() => {
